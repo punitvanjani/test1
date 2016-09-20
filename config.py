@@ -1,6 +1,7 @@
 import os
 import redis
 #test the git sync
+# line added for testing the auto sync 20-Sep-2016
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
