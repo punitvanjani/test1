@@ -30,7 +30,7 @@ def get_endpoint_types():
     # Serialize the queryset
     section_types_results = section_types_schemas.dump(section_types)
 
-    return jsonify({'hub': hub_result.data, 'endpoint_types':endpoint_types_results, 'section_types':section_types_results})
+    return jsonify({'hub': hub_result.data, 'endpoint_types':endpoint_types_results.data, 'section_types':section_types_results.data})
 
 
 @api.route('/endpoint_types/', methods=['POST'])
@@ -51,6 +51,7 @@ def new_endpoint_types():
     endpointtype = EndpointTypes(
                                     node_type=data['node_type'],
                                     node_type_desc=data['node_type_desc'],
+                                    node_category=data['node_category'],
                                     endpoint_type=data['endpoint_type'],
                                     endpoint_type_desc=data['endpoint_type_desc'],
                                     status_min=data['status_min'],
@@ -63,7 +64,7 @@ def new_endpoint_types():
 
     result = endpoint_types_schema.dump(EndpointTypes.query.get(endpointtype.id))
    
-    return jsonify({'message':'Endpoint Type created', 'endpoint_type':result})
+    return jsonify({'message':'Endpoint Type created', 'endpoint_type':result.data})
 
 @api.route('/endpoint_types/<int:node_type_id>/<int:endpoint_type_id>', methods=['PUT'])
 @admin_role_required
@@ -76,7 +77,7 @@ def edit_endpoint_types(node_type_id,endpoint_type_id):
         return duplicate_endpoint_type(message="Invalid combination of Node Type and Endpoint Type")
 
 # Validate and deserialize input
-    endpoint_types_schema_custom = EndpointTypesSchema(partial=('node_type','endpoint_type','node_type_desc','endpoint_type_desc','status_min','status_max','method',))
+    endpoint_types_schema_custom = EndpointTypesSchema(partial=('node_type','node_category','endpoint_type','node_type_desc','endpoint_type_desc','status_min','status_max','method',))
     data, errors = endpoint_types_schema_custom.load(json_data)
     if errors:
         return jsonify(errors), 422
@@ -101,7 +102,7 @@ def edit_endpoint_types(node_type_id,endpoint_type_id):
 
     result = endpoint_types_schema.dump(EndpointTypes.query.filter_by(node_type=node_type_id,endpoint_type=endpoint_type_id).first())
    
-    return jsonify({'message':'Endpoint Type edited', 'endpoint_type':result})
+    return jsonify({'message':'Endpoint Type edited', 'endpoint_type':result.data})
 
 @api.route('/section_types/', methods=['POST'])
 @admin_role_required
@@ -160,6 +161,6 @@ def edit_section_types(section_type_id):
 
     result = section_types_schema.dump(SectionTypes.query.filter_by(section_type=section_type_id).first())
    
-    return jsonify({'message':'Section Type edited', 'section_type':result})
+    return jsonify({'message':'Section Type edited', 'section_type':result.data})
 
 

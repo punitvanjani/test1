@@ -20,7 +20,7 @@ def get_endpoints():
     # Serialize the queryset
     hub_result = hub_schema.dump(hub)
     endpoint_results = endpoint_schemas.dump(endpoints)
-    return jsonify({'hub': hub_result.data, 'endpoints':endpoint_results})
+    return jsonify({'hub': hub_result.data, 'endpoints':endpoint_results.data})
 
 
 @api.route('/endpoints/', methods=['POST'])
@@ -72,7 +72,7 @@ def new_endpoint():
 
     result = endpoint_schema.dump(Endpoint.query.get(endpoint.id))
     
-    return jsonify({'message':'Endpoint created', 'endpoint':result})
+    return jsonify({'message':'Endpoint created', 'endpoint':result.data})
 
 @api.route('/endpoints/<uuid:id>', methods=['PUT'])
 def edit_endpoint(id):
@@ -116,7 +116,7 @@ def edit_endpoint(id):
     server_sync_endpoints()
 #  
     result = endpoint_schema.dump(Endpoint.query.get(endpoint.id))
-    return jsonify({'message':'Endpoint edited', 'endpoint':result})
+    return jsonify({'message':'Endpoint edited', 'endpoint':result.data})
 
 @api.route('/endpoints/<uuid:id>', methods=['DELETE'])
 @admin_role_required
@@ -134,4 +134,4 @@ def delete_endpoint(id):
     db.session.delete(endpointstatus)
     
     db.session.commit()
-    return jsonify({'message':'Endpoint deleted','endpoint':result})
+    return jsonify({'message':'Endpoint deleted','endpoint':result.data})

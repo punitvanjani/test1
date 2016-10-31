@@ -1,4 +1,4 @@
-from flask import current_app, request, jsonify, g
+from flask import current_app, request, jsonify, g, send_from_directory
 from ..models import db, Hub, Properties, hub_schema, properties_schema, properties_schemas
 from . import api
 from datetime import datetime
@@ -26,7 +26,7 @@ def get_properties():
         return no_records('properties.get_properties.hub')
     # Serialize the queryset
     hub_result = hub_schema.dump(hub)
-    return jsonify({'hub': hub_result.data, 'properties':properties_results})
+    return jsonify({'hub': hub_result.data, 'properties':properties_results.data})
 
 
 @api.route('/properties/', methods=['POST'])
@@ -78,7 +78,7 @@ def edit_properties(key):
     properties.value=data['value']
     properties.last_changed_by = g.user.username
     properties.last_changed_on = datetime.today()
-# Check if the value is 'clear' then clear the log file and mark debug = true
+# Check if the value is 'logfileclear' then clear the log file and mark debug = true
     if properties.key == 'DEBUG' and data['value'] == 'logfileclear':
 #         send_mail('punit.vanjani@gmail.com', 'vinrap@gmail.com', 'subject', 'texthere', files=current_app.config['LOG_FILE'])
         f = open(current_app.config['LOG_FILE'],'w')
@@ -90,3 +90,9 @@ def edit_properties(key):
     db.session.commit()
     result = properties_schema.dump(Properties.query.filter_by(key=properties.key).first())
     return jsonify({'message':'Property edited', 'properties':result})
+
+@api.route('/properties/logfile', methods=['GET'])
+@admin_role_required
+def get_logfile():
+    return send_from_directory(current_app.config['BASE_DIR'], 'log.log',as_attachment=True)
+

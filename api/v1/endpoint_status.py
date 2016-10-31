@@ -21,7 +21,7 @@ def get_endpointstatuses():
     # Serialize the queryset
     hub_result = hub_schema.dump(hub)
     endpoint_status_results = endpoint_status_schemas.dump(endpointstatus)
-    return jsonify({'hub': hub_result.data, 'status':endpoint_status_results})
+    return jsonify({'hub': hub_result.data, 'status':endpoint_status_results.data})
 
 @api.route('/status/<uuid:id>', methods=['GET'])
 def get_endpointstatus(id):
@@ -35,4 +35,4 @@ def get_endpointstatus(id):
     # Serialize the queryset
     hub_result = hub_schema.dump(hub)
     endpoint_status_result = endpoint_status_schema.dump(endpointstatus)
-    return jsonify({'hub': hub_result.data, 'status':endpoint_status_result})
+    return jsonify({'hub': hub_result.data, 'status':endpoint_status_result.data})

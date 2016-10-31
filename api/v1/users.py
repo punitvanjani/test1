@@ -65,7 +65,7 @@ def edit_users(username):
     user = User.query.filter_by(username=username).first()
 #
 # Change those parameters that are passed, Group should be changed only by ADMIN user
-#     debug_msg(g.user.username,__file__)
+#     debug_msg(g.user.username)
     if (is_admin(g.user.username)):
         try:    user.group=data['group']
         except: pass
