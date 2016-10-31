@@ -84,6 +84,7 @@ class EndpointTypes(db.Model):
     id                  = db.Column(db.Integer, primary_key=True)
     node_type           = db.Column(db.Integer)                     # Node Types eg. 10=Webswitch, 11=TouchPanel, 12=TV, 13=Music, 14=AC
     node_type_desc      = db.Column(db.String)
+    node_category       = db.Column(db.String, default = 'simple')  # This field marks if the Node is of complex or simple type
     endpoint_type       = db.Column(db.Integer)                     # Endpoint types depends on NodeTypes eg. NodeType 10 - 10=Switch 11=Dimmer
     endpoint_type_desc  = db.Column(db.String)
     status_min          = db.Column(db.Integer)
@@ -109,6 +110,10 @@ class Endpoint(db.Model):
     last_changed_by     = db.Column(db.String)
     last_changed_on     = db.Column(db.DateTime)
 
+class WSNodeStatus(db.Model):
+    __tablename__       = 'ws_node_status'
+    internal_nod_id     = db.Column(db.Integer, primary_key=True)
+    status              = db.Column(db.Integer)
 
 class EndpointStatus(db.Model):
     __tablename__       = 'endpoint_status'
@@ -234,6 +239,7 @@ class EndpointTypesSchema(Schema):
     id                  = fields.Int(dump_only=True)
     node_type           = fields.Number(validate=lambda n: 10 <= n <= 99)
     node_type_desc      = fields.Str()
+    node_category       = fields.Str()
     endpoint_type       = fields.Number(validate=lambda n: 1000 <= n <= 9999)
     endpoint_type_desc  = fields.Str()
     status_min          = fields.Int()
@@ -255,7 +261,6 @@ class EndpointSchema(Schema):
     endpoint_type       = fields.Number(validate=lambda n: 1000 <= n <= 9999)
     endpoint_uuid       = fields.UUID(dump_only=True)
     internal_end_desc   = fields.Str()
-#     created_at          = fields.DateTime(dump_only=True)
     last_changed_by     = fields.Str(validate=[validate.Length(max=64)])
     last_changed_on     = fields.DateTime(dump_only=True)
 

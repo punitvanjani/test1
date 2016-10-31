@@ -28,6 +28,12 @@ def create_app(config_module=None):
     def index():
         from api.v1 import get_catalog as v1_catalog
         return {'versions': {'v1': v1_catalog()}}
+    
+    @app.route('/static/')
+    @json
+    def static_file():
+        return {'static': {'response works':'yes it does'}}
+    
 
     @app.errorhandler(404)
     @auth.login_required

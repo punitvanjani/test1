@@ -80,6 +80,12 @@ def no_input(message='No input data provided'):
     response.status_code = 400
     return response
 
+def no_communication(message='No communication possible. Contact Admin.'):
+    response = jsonify({'status': 400, 'error': 'No communication possible. Contact Admin.',
+                        'message': message})
+    response.status_code = 400
+    return response
+
 
 def duplicate_endpoint(message='Endpoint with same parameters already exists'):
     response = jsonify({'status': 400, 'error': 'same sectionid, node id, endpoint id',
@@ -157,5 +163,3 @@ def hub_not_active(message='Hub not active, contact Admin'):
                         'message': 'Hub not active, contact Admin. ' + message})
     response.status_code = 400
     return response
-
-

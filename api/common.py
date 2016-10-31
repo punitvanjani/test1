@@ -9,6 +9,11 @@ from flask import current_app, g, jsonify
 from models import db, Hub, Endpoint, User, EndpointTypes, SectionTypes, EndpointGroup, Schedule, Properties, EndpointSchema, HubSchema
 from datetime import datetime
 import uuid
+import interface
+from errors import invalid_operation, no_records
+import inspect
+import traceback
+from debugger import debug_msg
 # from api.v1.interfaces import server_update_hub
 
 def is_admin(user):
@@ -105,14 +110,18 @@ def operate_validation(endpoint_uuid, status):
         valid = True
     
     endpoint_types = EndpointTypes.query.filter_by(node_type=endpoint.node_type,endpoint_type=endpoint.endpoint_type).first()
-    
     if endpoint_types != None:
-        if (status >= endpoint_types.status_min) and (status <= endpoint_types.status_max):
+        if status == endpoint_types.status_min:
+            valid = True
+        elif status == endpoint_types.status_max:
+            valid = True
+        elif (status > endpoint_types.status_min) and (status < endpoint_types.status_max):
             valid = True
         else:
             valid = False
     else:
         valid = False
+    debug_msg('endpoint_types', endpoint.node_type,endpoint.endpoint_type,endpoint_types.status_min,endpoint_types.status_max,status,valid)    
     return valid
 
 def unique_property(key):
@@ -133,38 +142,61 @@ def unique_group_desc(group_desc):
     return unique
 
 
-def debug_msg(message,file=__file__,keyword1=-99,keyword2=-99,keyword3=-99,keyword4=-99,keyword5=-99):
-    msg = ''
-    property = Properties.query.filter_by(key = 'DEBUG').first()
-    if property.value != None and property.value == 'true':
-        try:
-            msg += '\t' + 'USER:' + str(g.user.username)
-        except:
-            msg += '\t' + 'USER:' + str("BackendUser")
-        msg += '\t' + 'FILE:' + str(file)
-        msg += '\t'
-        if(keyword1!=-99):
-            msg += 'KEY1:' + str(keyword1)
-        msg += '\t'
-        if(keyword2!=-99):
-            msg += 'KEY2:' + str(keyword2)
-        msg += '\t'
-        if(keyword3!=-99):
-            msg += 'KEY3:' + str(keyword3)
-        msg += '\t'        
-        if(keyword4!=-99):
-            msg += 'KEY4:' + str(keyword4)
-        msg += '\t'
-        if(keyword5!=-99):
-            msg += 'KEY5:' + str(keyword5)
-        msg += '\t' + 'MSG:' + str(message)
-# Open log file in append mode
-        f = open(current_app.config['LOG_FILE'],'a')
-        f.write(str(datetime.today()))
-        f.write(msg)
-        print msg
-        f.write('\n')
-        f.close()
+# def debug_msg(message,keyword1=-99,keyword2=-99,keyword3=-99,keyword4=-99,keyword5=-99,keyword6=-99,keyword7=-99,keyword8=-99,keyword9=-99,keyword10=-99):
+#     msg = ''
+#     property = Properties.query.filter_by(key = 'DEBUG').first()
+#     if property.value != None and property.value == 'true':
+#         callerframerecord = inspect.stack()[1]    # 0 represents this line
+#                                                   # 1 represents line at caller
+#         frame = callerframerecord[0]
+#         info = inspect.getframeinfo(frame)
+#         try:
+#             msg += '\t' + 'USER:' + str(g.user.username)
+#         except:
+#             msg += '\t' + 'USER:' + str("BackendUser")
+#         msg += '\t' + 'FILE:' + str(info.filename)
+#         msg += '\t' + 'FUNC:' + str(info.function)
+#         msg += '\t' + 'LINE:' + str(info.lineno)
+#         msg += '\t' + 'CALL:' + str(traceback.format_stack(limit=5))
+#         
+#         msg += '\t'
+#         if(keyword1!=-99):
+#             msg += 'KEY1:' + str(keyword1)
+#         msg += '\t'
+#         if(keyword2!=-99):
+#             msg += 'KEY2:' + str(keyword2)
+#         msg += '\t'
+#         if(keyword3!=-99):
+#             msg += 'KEY3:' + str(keyword3)
+#         msg += '\t'        
+#         if(keyword4!=-99):
+#             msg += 'KEY4:' + str(keyword4)
+#         msg += '\t'
+#         if(keyword5!=-99):
+#             msg += 'KEY5:' + str(keyword5)
+#         msg += '\t'
+#         if(keyword6!=-99):
+#             msg += 'KEY6:' + str(keyword6)
+#         msg += '\t'
+#         if(keyword7!=-99):
+#             msg += 'KEY7:' + str(keyword7)
+#         msg += '\t'
+#         if(keyword8!=-99):
+#             msg += 'KEY8:' + str(keyword8)
+#         msg += '\t'
+#         if(keyword9!=-99):
+#             msg += 'KEY9:' + str(keyword9)
+#         msg += '\t'
+#         if(keyword10!=-99):
+#             msg += 'KEY10:' + str(keyword10)
+#         msg += '\t' + 'MSG:' + str(message)
+# # Open log file in append mode
+#         f = open(current_app.config['LOG_FILE'],'a')
+#         f.write(str(datetime.today()))
+#         f.write(msg)
+#         print msg
+#         f.write('\n')
+#         f.close()
 
 def get_intranet_ip_address(ifname):
     try:
@@ -222,7 +254,12 @@ def server_hub_string(hubdetails):
 #     hub_schema_custom = HubSchema(exclude=('last_changed_on', 'last_changed_by'))
 #     hubstring = hub_schema_custom.dump(hubdetails).data
 
-    hubstring = '{"description":"'+ str(hubdetails.description) +'", "external_url":"'+hubdetails.external_url+'","hub_id":"'+str(hubdetails.hub_id)+'","internal_url":"'+str(hubdetails.internal_url)+'"}'
+    hubstring = '{"description":"'+ str(hubdetails.description) +'", "external_url":"'+str(hubdetails.external_url)+'","hub_id":"'+str(hubdetails.hub_id)+'","internal_url":"'+str(hubdetails.internal_url)+'"}'
+#     hubstring = ''
+#     hubstring = hubstring + '{"description":"'+ str(hubdetails.description) 
+#     hubstring = hubstring +'", "external_url":"'+str(hubdetails.external_url)
+#     hubstring = hubstring +'","hub_id":"'+str(hubdetails.hub_id)
+#     hubstring = hubstring +'","internal_url":"'+str(hubdetails.internal_url)+'"}'
     return hubstring
 
 def server_update_hub(hubdetails):
@@ -231,11 +268,11 @@ def server_update_hub(hubdetails):
     serverurl = server.value
     serverurl = serverurl + 'et_update_hub_info.php?arg={"hub":'  
     url = serverurl + str(server_hub_string(hubdetails)) + '}'
-    debug_msg('hub_defined__server_updated', __file__, url)
+    debug_msg('hub_defined__server_updated', url)
     try:
         user,password = get_server_credentials()
         req = requests.get(url,auth=HTTPBasicAuth(user, password)).json()
-        debug_msg('response', __file__, req)
+        debug_msg('response', req)
 #         resp = req['success']
     except requests.exceptions.ConnectionError:
         req = None
@@ -251,12 +288,41 @@ def server_update_hub(hubdetails):
         resp = None
     return resp
 
+def endpoint_update_status(endpoint_uuid,status):
+    resp = None
+    server = Properties.query.filter_by(key='ServerAPI').first()
+    serverurl = server.value
+    serverurl = serverurl + 'et_change_endpoint_status.php?arg={"etct_endpoint_id":"'  
+    url = serverurl + str(endpoint_uuid)+'","status":"' + status +'"}'
+    debug_msg('endpoint_update_status, url')
+    try:
+        user,password = get_server_credentials()
+        req = requests.get(url,auth=HTTPBasicAuth(user, password)).json()
+        debug_msg('response', req)
+#         resp = req['success']
+    except requests.exceptions.ConnectionError:
+        req = None
+        msg = "Error"
+        resp = None
+    except requests.exceptions.RequestException:
+        req = None
+        msg = "ERROR"
+        resp = None
+    except:
+        req = None
+        msg = "ERROR"
+        resp = None
+    return resp
+
+# http://shubansolutions.com/etct/ws/et_change_endpoint_status.php?arg={"etct_endpoint_id":"8a38f241-7c1d-4580-a9fa-6debd3f03061","status":"A"}
+
+
 def server_endpoint_string(endpoints):
 #     endpoint_schemas_custom = EndpointSchema(exclude=('last_changed_on', 'last_changed_by'), many = True, extra={"qwe":'123',"qbc":1234})
 #     endpoint_schemas_custom = EndpointSchema(exclude=('last_changed_on', 'last_changed_by'), many = True)
 #     endpointstring = endpoint_schemas_custom.dump(endpoints).data
 # #     endpointstring = jsonify({'endpoints':endpointstring})
-#     debug_msg('endpoint_defined__server_updated', __file__, endpointstring)
+#     debug_msg('endpoint_defined__server_updated', endpointstring)
     endpointstring = ''
     for endpoint_single in endpoints:
         endpointstring += '{"internal_sec_id":"'+ str(endpoint_single.internal_sec_id) +'", "section_type":"' + str(endpoint_single.section_type)+'","internal_sec_desc":"'+str(endpoint_single.internal_sec_desc)+'","internal_nod_id":"'+str(endpoint_single.internal_nod_id)+'","node_type":"'+str(endpoint_single.node_type)+'","internal_nod_desc":"'+str(endpoint_single.internal_nod_desc)+'","internal_end_id":"'+str(endpoint_single.internal_end_id)+'","endpoint_type":"'+str(endpoint_single.endpoint_type)+'","endpoint_uuid":"'+str(endpoint_single.endpoint_uuid)+'","internal_end_desc":"'+str(endpoint_single.internal_end_desc)+'"}'
@@ -271,12 +337,12 @@ def server_sync_endpoints():
     endpoints = Endpoint.query.all()
     hubdetails = Hub.query.first()
     url = serverurl + '{"endpoints":[['+ str(server_endpoint_string(endpoints)) + '],{}],"hub":' + str(server_hub_string(hubdetails)) + '}'
-    debug_msg('endpoint_defined__server_updated', __file__, url)
+    debug_msg('endpoint_defined__server_updated', url)
 
     try:
         user,password = get_server_credentials()
         req = requests.get(url,auth=HTTPBasicAuth(user, password)).json()
-        debug_msg('response', __file__, req)
+        debug_msg('response', req)
 #         resp = req['success']
     except requests.exceptions.ConnectionError:
         req = None
@@ -396,6 +462,7 @@ def system_start():
     str_ip = get_intranet_ip_address('eth0')
     if str_ip == "0.0.0.0":
         str_ip = get_intranet_ip_address('wlan0')
+    str_ip = 'http://' + str_ip
     int_serial = get_serial()
     str_ext_url = get_external_url()
     hubdetails = Hub.query.first()
@@ -416,13 +483,52 @@ def system_start():
         resp = server_update_hub(hubdetails)
 # External URL is fetched, Server is updated
         if (str_ext_url != 'Error' or str_ext_url != 'ERROR') and resp != None:
-            debug_msg('hub_started__external_url_fetched__server_updated', __file__, int_serial, str_ip, str_ext_url, resp, hubdetails.status)
+            debug_msg('hub_started__external_url_fetched__server_updated', int_serial, str_ip, str_ext_url, resp, hubdetails.status)
 # External URL is fetched, Server is not updated
         elif (str_ext_url != 'Error' or str_ext_url != 'ERROR') and resp == None:
-            debug_msg('hub_started__external_url_fetched__server_not_updated', __file__, int_serial, str_ip, str_ext_url, resp, hubdetails.status)
+            debug_msg('hub_started__external_url_fetched__server_not_updated', int_serial, str_ip, str_ext_url, resp, hubdetails.status)
 # External URL is not fetched, Server is updated
         elif (str_ext_url == 'Error' or str_ext_url == 'ERROR') and resp != None:
-            debug_msg('hub_started__external_url_not_fetched__server_updated', __file__, int_serial, str_ip, str_ext_url, resp, hubdetails.status)
+            debug_msg('hub_started__external_url_not_fetched__server_updated', int_serial, str_ip, str_ext_url, resp, hubdetails.status)
 # External URL is not fetched, Server is not updated
         else:
-            debug_msg('hub_started__external_url_not_fetched__server_not_updated', __file__, int_serial, str_ip, str_ext_url, resp, hubdetails.status)
+            debug_msg('hub_started__external_url_not_fetched__server_not_updated', int_serial, str_ip, str_ext_url, resp, hubdetails.status)
+            
+
+def operate_endpoint_group(uuid, expected_status):
+    status = -1
+    errors = ""
+# Find if it is Endpoint or Group
+    endpoint = Endpoint.query.filter_by(endpoint_uuid = uuid).first()
+    if endpoint == None:
+        group = EndpointGroup.query.filter_by(group_uuid = uuid).first()
+        if group == None:
+# UUID is not valid Endpoint or Group, exit the function with errors
+            errors = no_records('operate.operate.endpoint_group',uuid)
+            status = -1
+            debug_msg('improper_uuid', errors, status)    
+            return (status,errors)
+# Action required for Endpoint as UUID passed is endpoint 
+    if endpoint != None:
+# Validate if this status is possible
+        if not (operate_validation(uuid,expected_status)):
+            errors = invalid_operation()
+            status = -1
+            debug_msg('endpointvalidation', errors, status)    
+            return (status,errors)
+# Get the parameters stored in Endpoint
+        endpointtype = EndpointTypes.query.filter_by(node_type=endpoint.node_type, endpoint_type=endpoint.endpoint_type).first()
+        if endpointtype == None:
+            errors = no_records('operate.operate.endpointtype',endpoint.node_type,endpoint.endpoint_type)
+            status = -1
+            debug_msg('endpointtypes_validation', errors, status,endpoint.node_type,endpoint.endpoint_type)
+            return (status,errors)
+# All the details are received, now call the corresponding method in interface and get the status
+        debug_msg('interface_communication', endpoint.endpoint_uuid,endpoint.node_type,endpoint.endpoint_type,endpoint.internal_nod_id,endpoint.internal_end_id,endpointtype.method,expected_status)
+        interfaces_method_name = getattr(interface,endpointtype.method)
+        status, errors = interfaces_method_name(endpoint,expected_status)
+# Action required for Group as UUID passed is endpoint group
+    elif group != None:
+        pass
+        
+    return (status,errors)
